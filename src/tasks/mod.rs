@@ -1,8 +1,8 @@
 mod error;
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{self, PgPool};
-use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 pub use self::error::{Error, Result};
@@ -15,11 +15,11 @@ pub struct TaskPayload {
 }
 
 #[derive(Debug, sqlx::Type, Serialize)]
-#[sqlx(type_name = "task_status", rename_all="lowercase")]
+#[sqlx(type_name = "task_status", rename_all = "lowercase")]
 enum TaskStatus {
     Draft,
     ToDo,
-    Completed
+    Completed,
 }
 
 #[derive(Debug, Serialize)]
@@ -32,14 +32,12 @@ pub struct Task {
 }
 
 impl Task {
-    pub fn parse(
-        payload: TaskPayload
-    ) -> Result<Task> {
+    pub fn parse(payload: TaskPayload) -> Result<Task> {
         if payload.title.len() <= 3 {
-            return Err(Error::ValueTooShort { 
-                parameter: String::from("title"), 
-                real_length: payload.title.len(), 
-                max_length: 3 
+            return Err(Error::ValueTooShort {
+                parameter: String::from("title"),
+                real_length: payload.title.len(),
+                max_length: 3,
             });
         }
 
@@ -48,14 +46,12 @@ impl Task {
             title: payload.title,
             description: payload.description,
             due: payload.due,
-            task_status: TaskStatus::Draft
+            task_status: TaskStatus::Draft,
         })
     }
 }
 
-pub async fn get_all_tasks(
-    db: PgPool
-) -> Result<Vec<Task>> {
+pub async fn get_all_tasks(db: PgPool) -> Result<Vec<Task>> {
     let result: Vec<Task> = sqlx::query_as!(
         Task,
         r#"SELECT
@@ -72,10 +68,7 @@ pub async fn get_all_tasks(
     Ok(result)
 }
 
-pub async fn get_task(
-    db: PgPool,
-    task_id: Uuid
-) -> Result<Task> {
+pub async fn get_task(db: PgPool, task_id: Uuid) -> Result<Task> {
     let result: Task = sqlx::query_as!(
         Task,
         r#"SELECT
@@ -88,17 +81,15 @@ pub async fn get_task(
         WHERE task_id = $1
         "#r,
         task_id
-    ).fetch_optional(&db)
+    )
+    .fetch_optional(&db)
     .await?
     .ok_or(Error::TaskNotFound)?;
 
     Ok(result)
 }
 
-pub async fn create_task(
-    db: PgPool,
-    new_task: Task,
-) -> Result<Uuid> {
+pub async fn create_task(db: PgPool, new_task: Task) -> Result<Uuid> {
     let new_id: Uuid = sqlx::query!(
         r#"
             INSERT INTO tasks (
@@ -121,16 +112,14 @@ pub async fn create_task(
     Ok(new_id)
 }
 
-pub async fn delete_task(
-    db: PgPool,
-    task_id: Uuid
-) -> Result<()> {
+pub async fn delete_task(db: PgPool, task_id: Uuid) -> Result<()> {
     sqlx::query!(
         r#"
             DELETE FROM tasks WHERE task_id = $1
         "#r,
         task_id
-    ).execute(&db)
+    )
+    .execute(&db)
     .await?;
 
     Ok(())

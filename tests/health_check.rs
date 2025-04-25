@@ -8,7 +8,9 @@ async fn health_check_returns_200() {
     let address = spawn_app().await;
 
     // Act
-    let res = reqwest::get(&format!("{}/health_check", &address)).await.expect("failed to send get request");
+    let res = reqwest::get(&format!("{}/health_check", &address))
+        .await
+        .expect("failed to send get request");
 
     // Assert
     assert!(res.status().is_success());

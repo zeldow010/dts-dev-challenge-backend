@@ -1,5 +1,5 @@
 use dts_dev_challenge_backend::app;
-use tracing::{info, Level};
+use tracing::{Level, info};
 
 #[tokio::main]
 async fn main() {

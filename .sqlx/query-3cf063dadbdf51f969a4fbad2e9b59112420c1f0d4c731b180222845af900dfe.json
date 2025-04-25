@@ -1,0 +1,36 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO tasks (\n                title, \n                description, \n                task_status,\n                due\n            ) VALUES ($1, $2, $3, $4)\n            RETURNING task_id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "task_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        {
+          "Custom": {
+            "name": "task_status",
+            "kind": {
+              "Enum": [
+                "draft",
+                "todo",
+                "completed"
+              ]
+            }
+          }
+        },
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "3cf063dadbdf51f969a4fbad2e9b59112420c1f0d4c731b180222845af900dfe"
+}

@@ -27,17 +27,17 @@ impl From<tasks::Error> for Error {
 
 // region:    --- Axum IntoResponse
 impl IntoResponse for Error {
-	fn into_response(self) -> Response {
-		debug!("{:<12} - model::Error {self:?}", "INTO_RES");
+    fn into_response(self) -> Response {
+        debug!("{:<12} - model::Error {self:?}", "INTO_RES");
 
-		// Create a placeholder Axum reponse.
-		let mut response = StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        // Create a placeholder Axum reponse.
+        let mut response = StatusCode::INTERNAL_SERVER_ERROR.into_response();
 
-		// Insert the Error into the reponse.
-		response.extensions_mut().insert(Arc::new(self));
+        // Insert the Error into the reponse.
+        response.extensions_mut().insert(Arc::new(self));
 
-		response
-	}
+        response
+    }
 }
 // endregion: --- Axum IntoResponse
 
@@ -57,28 +57,27 @@ impl std::error::Error for Error {}
 
 /// From the root error to the http status code and ClientError
 impl Error {
-	pub fn client_status_and_error(&self) -> (StatusCode, ClientError) {
-		match self {
-			Self::Tasks(tasks::Error::TaskNotFound) => (StatusCode::NOT_FOUND, ClientError::NOT_FOUND),
-			Self::Tasks(tasks::Error::ValueTooShort {
-				parameter: _,
-				real_length: _,
-				max_length: _
-			}) => (StatusCode::BAD_REQUEST, ClientError::MALFORMED_REQUEST),
-			// -- Fallback.
-			_ => (
-				StatusCode::SEE_OTHER,
-				ClientError::SERVICE_ERROR,
-			),
-		}
-	}
+    pub fn client_status_and_error(&self) -> (StatusCode, ClientError) {
+        match self {
+            Self::Tasks(tasks::Error::TaskNotFound) => {
+                (StatusCode::NOT_FOUND, ClientError::NOT_FOUND)
+            }
+            Self::Tasks(tasks::Error::ValueTooShort {
+                parameter: _,
+                real_length: _,
+                max_length: _,
+            }) => (StatusCode::BAD_REQUEST, ClientError::MALFORMED_REQUEST),
+            // -- Fallback.
+            _ => (StatusCode::SEE_OTHER, ClientError::SERVICE_ERROR),
+        }
+    }
 }
 
 #[derive(Debug, strum_macros::AsRefStr)]
 #[allow(non_camel_case_types)]
 pub enum ClientError {
-	NOT_FOUND,
-	MALFORMED_REQUEST,
-	SERVICE_ERROR,
+    NOT_FOUND,
+    MALFORMED_REQUEST,
+    SERVICE_ERROR,
 }
 // endregion: --- Client Error

@@ -10,7 +10,7 @@ use uuid::Uuid;
 struct TaskPayload {
     title: String,
     description: Option<String>,
-    due: DateTime<Utc>
+    due: DateTime<Utc>,
 }
 
 #[tokio::test]
@@ -20,11 +20,11 @@ async fn add_task_to_db_and_return_id() {
 
     let client = reqwest::Client::new();
 
-    let new_task : TaskPayload = Faker.fake();
+    let new_task: TaskPayload = Faker.fake();
 
     // Act
     let res = client
-        .post(format!("{}/tasks",address))
+        .post(format!("{}/tasks", address))
         .header("Content-Type", "application/json")
         .json(&new_task)
         .send()
@@ -42,10 +42,10 @@ async fn success_delete_task() {
 
     let client = reqwest::Client::new();
 
-    let new_task : TaskPayload = Faker.fake();
+    let new_task: TaskPayload = Faker.fake();
 
     let res = client
-        .post(format!("{}/tasks",address))
+        .post(format!("{}/tasks", address))
         .header("Content-Type", "application/json")
         .json(&new_task)
         .send()
@@ -57,7 +57,7 @@ async fn success_delete_task() {
     // Act
 
     let res = client
-        .delete(format!("{}/tasks/{}",address, &delete_id))
+        .delete(format!("{}/tasks/{}", address, &delete_id))
         .header("Content-Type", "application/json")
         .json(&delete_id)
         .send()
@@ -80,7 +80,7 @@ async fn delete_non_existent_id() {
     // Act
 
     let res = client
-        .delete(format!("{}/tasks/{}",address, &delete_id))
+        .delete(format!("{}/tasks/{}", address, &delete_id))
         .header("Content-Type", "application/json")
         .json(&delete_id)
         .send()

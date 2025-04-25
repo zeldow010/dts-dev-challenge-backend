@@ -1,14 +1,20 @@
 use std::time::Duration;
 
-use axum::{extract::{Path, State}, http::StatusCode, middleware, routing::get, Json, Router};
-use response_mapper::mw_response_map;
-use sqlx::{postgres::PgPoolOptions, PgPool};
-use uuid::Uuid;
+use axum::{
+    Json, Router,
+    extract::{Path, State},
+    http::StatusCode,
+    middleware,
+    routing::get,
+};
 use error::Result;
+use response_mapper::mw_response_map;
+use sqlx::{PgPool, postgres::PgPoolOptions};
+use uuid::Uuid;
 
-mod tasks;
 mod error;
 mod response_mapper;
+mod tasks;
 
 pub async fn app() -> Router {
     let db = PgPoolOptions::new()
@@ -21,28 +27,27 @@ pub async fn app() -> Router {
     Router::new()
         .route("/health_check", get(health_check))
         .route("/tasks", get(get_all_tasks).post(create_task))
-        .route("/tasks/{task_id}", get(get_specific_task).delete(delete_task))
+        .route(
+            "/tasks/{task_id}",
+            get(get_specific_task).delete(delete_task),
+        )
         .with_state(db)
         .layer(middleware::map_response(mw_response_map))
-        
 }
 
 async fn health_check() -> StatusCode {
     StatusCode::OK
 }
 
-async fn get_all_tasks(
-    State(db): State<PgPool>,
-) -> Result<Json<Vec<tasks::Task>>> {
-    let tasks = tasks::get_all_tasks(db)
-        .await?;
+async fn get_all_tasks(State(db): State<PgPool>) -> Result<Json<Vec<tasks::Task>>> {
+    let tasks = tasks::get_all_tasks(db).await?;
 
     Ok(Json(tasks))
 }
 
 async fn get_specific_task(
     State(db): State<PgPool>,
-    Path(task_id): Path<Uuid>
+    Path(task_id): Path<Uuid>,
 ) -> Result<Json<tasks::Task>> {
     let task = tasks::get_task(db, task_id).await?;
 
@@ -51,24 +56,20 @@ async fn get_specific_task(
 
 async fn create_task(
     State(db): State<PgPool>,
-    Json(payload): Json<tasks::TaskPayload>
+    Json(payload): Json<tasks::TaskPayload>,
 ) -> Result<Json<Uuid>> {
     let new_task: tasks::Task = tasks::Task::parse(payload)?;
 
-    let new_id = tasks::create_task(db, new_task)
-        .await?;
+    let new_id = tasks::create_task(db, new_task).await?;
 
     Ok(Json(new_id))
 }
 
-async fn delete_task(
-    State(db): State<PgPool>,
-    Path(task_id): Path<Uuid>
-) -> StatusCode {
+async fn delete_task(State(db): State<PgPool>, Path(task_id): Path<Uuid>) -> StatusCode {
     let delete_res = tasks::delete_task(db, task_id).await;
-    
+
     match delete_res {
         Ok(_) => StatusCode::OK,
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
     }
 }
