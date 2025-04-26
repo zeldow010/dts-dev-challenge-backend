@@ -1,11 +1,7 @@
-use std::time::Duration;
+use std::{env, time::Duration};
 
 use axum::{
-    Json, Router,
-    extract::{Path, State},
-    http::StatusCode,
-    middleware,
-    routing::get,
+    extract::{Path, State}, http::StatusCode, middleware, routing::{get, patch}, Json, Router
 };
 use error::Result;
 use response_mapper::mw_response_map;
@@ -14,13 +10,13 @@ use uuid::Uuid;
 
 mod error;
 mod response_mapper;
-mod tasks;
+pub mod tasks;
 
 pub async fn app() -> Router {
     let db = PgPoolOptions::new()
         .max_connections(5)
         .acquire_timeout(Duration::from_secs(3))
-        .connect("postgres://app:secret@localhost:5432/dts_tasks")
+        .connect(&env::var("DATABASE_URL").unwrap().to_string())
         .await
         .unwrap();
 
@@ -31,6 +27,7 @@ pub async fn app() -> Router {
             "/tasks/{task_id}",
             get(get_specific_task).delete(delete_task),
         )
+        .route("/tasks/{task_id}/next_status", patch(update_task_status))
         .with_state(db)
         .layer(middleware::map_response(mw_response_map))
 }
@@ -63,6 +60,15 @@ async fn create_task(
     let new_id = tasks::create_task(db, new_task).await?;
 
     Ok(Json(new_id))
+}
+
+async fn update_task_status(
+    State(db): State<PgPool>,
+    Path(task_id): Path<Uuid>
+) -> Result<Json<tasks::TaskStatus>> {
+    let task_status = tasks::update_task_status(db, task_id).await?;
+
+    Ok(Json(task_status))
 }
 
 async fn delete_task(State(db): State<PgPool>, Path(task_id): Path<Uuid>) -> StatusCode {

@@ -14,9 +14,9 @@ pub struct TaskPayload {
     due: DateTime<Utc>,
 }
 
-#[derive(Debug, sqlx::Type, Serialize)]
+#[derive(Debug, sqlx::Type, Deserialize, Serialize, PartialEq)]
 #[sqlx(type_name = "task_status", rename_all = "lowercase")]
-enum TaskStatus {
+pub enum TaskStatus {
     Draft,
     ToDo,
     Completed,
@@ -48,6 +48,16 @@ impl Task {
             due: payload.due,
             task_status: TaskStatus::Draft,
         })
+    }
+
+    pub fn next_status(mut self: Task) -> Self {
+        self.task_status = match self.task_status {
+            TaskStatus::Draft => TaskStatus::ToDo,
+            TaskStatus::ToDo => TaskStatus::Completed,
+            TaskStatus::Completed => TaskStatus::Completed
+        };
+
+        self
     }
 }
 
@@ -89,7 +99,10 @@ pub async fn get_task(db: PgPool, task_id: Uuid) -> Result<Task> {
     Ok(result)
 }
 
-pub async fn create_task(db: PgPool, new_task: Task) -> Result<Uuid> {
+pub async fn create_task(
+    db: PgPool, 
+    new_task: Task
+) -> Result<Uuid> {
     let new_id: Uuid = sqlx::query!(
         r#"
             INSERT INTO tasks (
@@ -112,7 +125,51 @@ pub async fn create_task(db: PgPool, new_task: Task) -> Result<Uuid> {
     Ok(new_id)
 }
 
-pub async fn delete_task(db: PgPool, task_id: Uuid) -> Result<()> {
+pub async fn update_task_status(
+    db: PgPool, 
+    task_id: Uuid
+) -> Result<TaskStatus> {
+    let mut current_task: Task = sqlx::query_as!(
+        Task,
+        r#"SELECT
+            task_id,
+            title,
+            description,
+            task_status AS "task_status!: TaskStatus",
+            due
+        FROM tasks
+        WHERE task_id = $1
+        "#r,
+        task_id
+    )
+    .fetch_optional(&db)
+    .await?
+    .ok_or(Error::TaskNotFound)?;
+
+    current_task = current_task.next_status();
+
+    let new_task_status: TaskStatus = sqlx::query!(
+        r#"
+            UPDATE tasks 
+            SET task_status = $1 
+            WHERE task_id = $2
+            RETURNING task_status AS "task_status!: TaskStatus"
+        "#r,
+        current_task.task_status as TaskStatus,
+        current_task.task_id
+    )
+    .fetch_optional(&db)
+    .await?
+    .ok_or(Error::TaskNotFound)?
+    .task_status;
+
+    Ok(new_task_status)
+}
+
+pub async fn delete_task(
+    db: PgPool, 
+    task_id: Uuid
+) -> Result<()> {
     sqlx::query!(
         r#"
             DELETE FROM tasks WHERE task_id = $1
@@ -123,4 +180,25 @@ pub async fn delete_task(db: PgPool, task_id: Uuid) -> Result<()> {
     .await?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod test {
+    use chrono::Utc;
+
+    use crate::tasks::TaskStatus;
+
+    use super::{Task, TaskPayload};
+
+    #[test]
+    fn check_task_update() {
+        let payload: TaskPayload = TaskPayload { title: "A Status Test".to_string(), description: None, due: Utc::now() };
+        let mut new_task: Task = Task::parse(payload).unwrap();
+
+        assert_eq!(new_task.task_status, TaskStatus::Draft);
+
+        new_task = new_task.next_status();
+
+        assert_eq!(new_task.task_status, TaskStatus::ToDo);
+    }
 }

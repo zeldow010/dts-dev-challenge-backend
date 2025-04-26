@@ -1,6 +1,7 @@
 mod utils;
 
 use chrono::{DateTime, Utc};
+use dts_dev_challenge_backend::tasks;
 use fake::{Dummy, Fake, Faker};
 use serde::Serialize;
 use utils::spawn_app;
@@ -89,4 +90,41 @@ async fn delete_non_existent_id() {
 
     // Assert
     assert_eq!(200, res.status().as_u16());
+}
+
+#[tokio::test]
+async fn update_status_of_task() {
+    // Arrange
+    let address = spawn_app().await;
+
+    let client = reqwest::Client::new();
+
+    let new_task: TaskPayload = Faker.fake();
+
+    // Act
+    let res = client
+        .post(format!("{}/tasks", address))
+        .header("Content-Type", "application/json")
+        .json(&new_task)
+        .send()
+        .await
+        .expect("Failed to execute request.");
+
+    let task_id: Uuid = res.json().await.unwrap();
+
+    let res = client
+        .patch(format!("{}/tasks/{}/next_status", address, &task_id))
+        .header("Content-Type", "application/json")
+        .json(&task_id)
+        .send()
+        .await
+        .expect("Failed to execute request");
+
+    let task_status: tasks::TaskStatus = res
+        .json()
+        .await
+        .expect("Failed to get TaskStatus");
+
+    // Assert
+    assert_eq!(tasks::TaskStatus::ToDo, task_status);
 }

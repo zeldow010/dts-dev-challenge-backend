@@ -1,0 +1,45 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE tasks \n            SET task_status = $1 \n            WHERE task_id = $2\n            RETURNING task_status AS \"task_status!: TaskStatus\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "task_status!: TaskStatus",
+        "type_info": {
+          "Custom": {
+            "name": "task_status",
+            "kind": {
+              "Enum": [
+                "draft",
+                "todo",
+                "completed"
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "task_status",
+            "kind": {
+              "Enum": [
+                "draft",
+                "todo",
+                "completed"
+              ]
+            }
+          }
+        },
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "ecae748b91ca10069e25afcd12856eb1a708570d736078f67e8914dba9bdd943"
+}
