@@ -1,4 +1,4 @@
-use std::{env, time::Duration};
+use std::time::Duration;
 
 use axum::{
     extract::{Path, State}, http::StatusCode, middleware, routing::{get, patch}, Json, Router
@@ -16,7 +16,7 @@ pub async fn app() -> Router {
     let db = PgPoolOptions::new()
         .max_connections(5)
         .acquire_timeout(Duration::from_secs(3))
-        .connect(&env::var("DATABASE_URL").unwrap().to_string())
+        .connect("postgres://app:secret@localhost:5432/dts_tasks")
         .await
         .unwrap();
 
