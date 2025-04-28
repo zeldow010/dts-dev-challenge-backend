@@ -54,7 +54,7 @@ impl Task {
         self.task_status = match self.task_status {
             TaskStatus::Draft => TaskStatus::ToDo,
             TaskStatus::ToDo => TaskStatus::Completed,
-            TaskStatus::Completed => TaskStatus::Completed
+            TaskStatus::Completed => TaskStatus::Completed,
         };
 
         self
@@ -99,10 +99,7 @@ pub async fn get_task(db: PgPool, task_id: Uuid) -> Result<Task> {
     Ok(result)
 }
 
-pub async fn create_task(
-    db: PgPool, 
-    new_task: Task
-) -> Result<Uuid> {
+pub async fn create_task(db: PgPool, new_task: Task) -> Result<Uuid> {
     let new_id: Uuid = sqlx::query!(
         r#"
             INSERT INTO tasks (
@@ -125,10 +122,7 @@ pub async fn create_task(
     Ok(new_id)
 }
 
-pub async fn update_task_status(
-    db: PgPool, 
-    task_id: Uuid
-) -> Result<TaskStatus> {
+pub async fn update_task_status(db: PgPool, task_id: Uuid) -> Result<TaskStatus> {
     let mut current_task: Task = sqlx::query_as!(
         Task,
         r#"SELECT
@@ -166,10 +160,7 @@ pub async fn update_task_status(
     Ok(new_task_status)
 }
 
-pub async fn delete_task(
-    db: PgPool, 
-    task_id: Uuid
-) -> Result<()> {
+pub async fn delete_task(db: PgPool, task_id: Uuid) -> Result<()> {
     sqlx::query!(
         r#"
             DELETE FROM tasks WHERE task_id = $1
@@ -192,7 +183,11 @@ mod test {
 
     #[test]
     fn check_task_update() {
-        let payload: TaskPayload = TaskPayload { title: "A Status Test".to_string(), description: None, due: Utc::now() };
+        let payload: TaskPayload = TaskPayload {
+            title: "A Status Test".to_string(),
+            description: None,
+            due: Utc::now(),
+        };
         let mut new_task: Task = Task::parse(payload).unwrap();
 
         assert_eq!(new_task.task_status, TaskStatus::Draft);

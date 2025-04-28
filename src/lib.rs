@@ -1,7 +1,11 @@
 use std::time::Duration;
 
 use axum::{
-    extract::{Path, State}, http::StatusCode, middleware, routing::{get, patch}, Json, Router
+    Json, Router,
+    extract::{Path, State},
+    http::StatusCode,
+    middleware,
+    routing::{get, patch},
 };
 use error::Result;
 use response_mapper::mw_response_map;
@@ -64,7 +68,7 @@ async fn create_task(
 
 async fn update_task_status(
     State(db): State<PgPool>,
-    Path(task_id): Path<Uuid>
+    Path(task_id): Path<Uuid>,
 ) -> Result<Json<tasks::TaskStatus>> {
     let task_status = tasks::update_task_status(db, task_id).await?;
 

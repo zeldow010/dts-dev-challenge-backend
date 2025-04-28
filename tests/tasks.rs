@@ -120,10 +120,7 @@ async fn update_status_of_task() {
         .await
         .expect("Failed to execute request");
 
-    let task_status: tasks::TaskStatus = res
-        .json()
-        .await
-        .expect("Failed to get TaskStatus");
+    let task_status: tasks::TaskStatus = res.json().await.expect("Failed to get TaskStatus");
 
     // Assert
     assert_eq!(tasks::TaskStatus::ToDo, task_status);
