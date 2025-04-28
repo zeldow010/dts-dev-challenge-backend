@@ -45,3 +45,11 @@ However, in the time I was able to produce this backend service I made a few com
 - Tighted validation and verification on environment variables with appropraite error messages to guide setup.
 - Better error messages for client side applications, by designing from a stakeholder perspective.
 - Improved Logging and Tracing for external monitoring.
+
+## Beyond the scope
+
+A feature that would need to be added beyond the scope of this challenge would be an authentication and authorisation system.
+
+A new table would need to be added into the database which would contain information about each user. Then the `tasks` table would need to be updated to contain a foreign key to track which task belongs to who.
+
+Of course, authentication system require a lot of attention to ensure safety following **OWASP Best Practices**, like using `argon2` as a cryptographically secure hashing algorithm for passwords.
